@@ -1,7 +1,5 @@
 # PricecoinX RPC Explorer
 
-[![npm version][npm-ver-img]][npm-ver-url] [![NPM downloads][npm-dl-img]][npm-dl-url]
-
 A fork of the Bitcoin network explorer, by janoside adapted for PricecoinX.
 The original README of the project can be found here https://github.com/janoside/btc-rpc-explorer
 
