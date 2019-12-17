@@ -15,10 +15,6 @@ The original README of the project can be found here https://github.com/janoside
 * Mempool summary, with fee, size, and age breakdowns
 * RPC command browser and terminal
 
-# Changelog / Release notes
-
-See [CHANGELOG.md](/CHANGELOG.md).
-
 # Getting started
 
 ## Prerequisites
