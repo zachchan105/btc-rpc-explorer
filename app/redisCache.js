@@ -1,50 +1,60 @@
-var redis = require("redis");
-var bluebird = require("bluebird");
+"use strict";
 
-var config = require("./config.js");
-var utils = require("./utils.js");
+const { createClient } = require("redis");
 
-var redisClient = null;
+const config = require("./config.js");
+const utils = require("./utils.js");
+
+let redisClient = null;
 if (config.redisUrl) {
-	bluebird.promisifyAll(redis.RedisClient.prototype);
-
-	redisClient = redis.createClient({url:config.redisUrl});
+	redisClient = createClient({url:config.redisUrl});
 }
 
-function onCacheEvent(cacheType, hitOrMiss, cacheKey) {
-	//console.log(`cache.${cacheType}.${hitOrMiss}: ${cacheKey}`);
-}
+function createCache(keyPrefix, onCacheEvent) {
+	return {
+		get: async function(key) {
+			if (!redisClient.isOpen) {
+				await redisClient.connect();
+			}
 
-var redisCache = {
-	get:function(key) {
-		return new Promise(function(resolve, reject) {
-			redisClient.getAsync(key).then(function(result) {
+			const prefixedKey = `${keyPrefix}-${key}`;
+
+			onCacheEvent("redis", "try", prefixedKey);
+
+			try {
+				let result = await redisClient.get(prefixedKey);
+
 				if (result == null) {
-					onCacheEvent("redis", "miss", key);
+					onCacheEvent("redis", "miss", prefixedKey);
 
-					resolve(null);
+					return null;
 
-					return;
+				} else {
+					onCacheEvent("redis", "hit", prefixedKey);
+
+					return JSON.parse(result);
 				}
+			} catch (err) {
+				onCacheEvent("redis", "error", prefixedKey);
 
-				onCacheEvent("redis", "hit", key);
+				utils.logError("328rhwefghsdgsdss", err, {key:prefixedKey});
 
-				resolve(JSON.parse(result));
+				throw err;
+			}
+		},
+		set: async function(key, obj, maxAgeMillis) {
+			if (!redisClient.isOpen) {
+				await redisClient.connect();
+			}
+			
+			const prefixedKey = `${keyPrefix}-${key}`;
 
-			}).catch(function(err) {
-				utils.logError("328rhwefghsdgsdss", err);
-
-				reject(err);
-			});
-		});
-	},
-	set:function(key, obj, maxAgeMillis) {
-		redisClient.set(key, JSON.stringify(obj), "PX", maxAgeMillis);
-	}
-};
+			await redisClient.set(prefixedKey, JSON.stringify(obj), {"PX": maxAgeMillis});
+		}
+	};
+}
 
 module.exports = {
 	active: (redisClient != null),
-	get: redisCache.get,
-	set: redisCache.set
+	createCache: createCache
 }

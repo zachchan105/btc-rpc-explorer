@@ -1,31 +1,22 @@
 extends layout
 
 block headContent
-	title RPC Terminal
+	title Terminal
 
 block content
-	div(class="row")
-		div(class="col")
-			h1.h3 RPC Terminal
+	+pageTitle("Terminal")
 
-		div(class="col")
-			if (!config.demoSite && (!config.credentials.rpc || !config.credentials.rpc.rpc))
-				span(style="float: right;")
-					a(href="/disconnect", class="btn btn-secondary") Disconnect from node
-	
-	hr
+	+dismissableInfoAlert
+		.mb-3 This is an internal developer tool.
 
-	:markdown-it
-		Use this interactive terminal to send RPC commands to your node. Results will be shown inline. To browse all available RPC commands you can use the [RPC Browser](/rpc-browser).
+	+contentSection
+		form(id="terminal-form")
+			.mb-3
+				label(for="input-cmd") Command
+				input.form-control(type="text", id="input-cmd", name="cmd")
 
-	div(class="card mb-3 shadow-sm")
-		div(class="card-body")
-			form(id="terminal-form")
-				div(class="form-group")
-					label(for="input-cmd") Command
-					input(type="text", id="input-cmd", name="cmd", class="form-control")
-
-				input(type="submit", class="btn btn-primary btn-block", value="Send")
+			input.btn.btn-primary.w-100(type="submit", value="Send")
+			
 
 	hr
 	
@@ -46,12 +37,12 @@ block endOfBody
 				postData._csrf = csrfToken;
 				
 				$.post(
-					"/rpc-terminal",
+					"./terminal",
 					postData,
 					function(response, textStatus, jqXHR) {
 						var t = new Date().getTime();
 
-						$("#terminal-output").prepend("<div id='output-" + t + "' class='card mb-3 shadow-sm'><div class='card-body'><h5>" + cmd + "</h5><pre><code class='json'>" + response + "</code></pre></div></div>");
+						("#terminal-output").prepend("<div id='output-" + t + "' class='card mb-3 shadow-sm'><div class='card-body'><h5>" + cmd + "</h5><pre><code class='json'>" + response + "</code></pre></div></div>");
 						console.log(response);
 
 						$("#output-" + t + " pre code").each(function(i, block) {

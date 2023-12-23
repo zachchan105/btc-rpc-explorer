@@ -3,8 +3,10 @@ extends layout
 block headContent
 	title Changelog
 
-block content
-	h1.h3 Changelog
-	hr
+	style.
 
-	| !{changelogHtml}
+block content
+	+pageTitle("Changelog / Release Notes")
+
+	+contentSection
+		| !{changelogHtml}

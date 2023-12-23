@@ -6,402 +6,298 @@ block headContent
 block content
 	if (result && result.validateaddress)
 		if (!result.validateaddress.isvalid)
-			h1(class="h3 text-danger") Invalid Address
-				br
-				small(class="monospace") #{address}
+			div.alert.alert-danger.mb-huge
+				h1.h6.fw-bold Invalid Address
+				span.font-monospace #{address}
+				
 		else
-			h1.h3 Address
-				br
-				small(class="monospace") #{address}
+			.clearfix
+				.float-start
+					+pageTitle("Address", address, true)
+
+				.float-start.float-md-end.mb-3.mb-md-0
+					img(src=addressQrCodeUrl, alt=address, style="border: solid 1px #ccc;")
+
 			
-			hr
-
-			if (payoutAddressForMiner)
-				div(class="alert alert-primary shadow-sm", style="padding-bottom: 0;")
-					div(class="float-left", style="width: 50px; height: 50px; font-size: 18px;")
-						i(class="fas fa-certificate fa-2x", style="margin-top: 10px;")
-
-					h4(class="alert-heading h6 font-weight-bold") #{coinConfig.name} Fun
-
-					p
-						span This looks like a miner payout address for  
-						span(class="font-weight-bold") #{payoutAddressForMiner.name}
-						if (coinConfig.miningPoolsConfigUrls.length > 1)
-							span  (see the configurations: 
-							each item, index in coinConfig.miningPoolsConfigUrls
-								if (index > 0)
-									span , 
-								a(href=item) config ##{index + 1}
-							span )
-						else
-							span  (see the configuration
-							a(href=coinConfig.miningPoolsConfigUrls[0]) here
-							span )
-			else if (global.specialAddresses[address] && global.specialAddresses[address].type == "donation")
-				div(class="alert alert-primary shadow-sm", style="padding-bottom: 0;")
-					div(class="float-left", style="width: 50px; height: 50px; font-size: 18px;")
-						i(class="fas fa-certificate fa-2x", style="margin-top: 10px;")
-
-					h4(class="alert-heading h6 font-weight-bold") #{coinConfig.name} Fun
-
-					p
-						span This is the #{coinConfig.ticker} donation address to support development of this tool. All support is appreciated!
-
-			else if (global.specialAddresses[address] && global.specialAddresses[address].type == "fun")
-				div(class="alert alert-primary shadow-sm", style="padding-bottom: 0;")
-					div(class="float-left", style="width: 50px; height: 50px; font-size: 18px;")
-						i(class="fas fa-certificate fa-2x", style="margin-top: 10px;")
-
-					h4(class="alert-heading h6 font-weight-bold") #{coinConfig.name} Fun
-
-					// special address info
-					- var saInfo = global.specialAddresses[address].addressInfo;
-					if (saInfo.alertBodyHtml)
-						p
-							span !{saInfo.alertBodyHtml}
-
-							if (saInfo.referenceUrl && saInfo.referenceUrl.trim().length > 0 && saInfo.alertBodyHtml.indexOf(saInfo.referenceUrl) == -1)
-								span  
-									a(href=saInfo.referenceUrl) Read more
-
-					else
-						p
-							span #{saInfo.summary}
-
-							if (saInfo.referenceUrl && saInfo.referenceUrl.trim().length > 0)
-								span  
-									a(href=saInfo.referenceUrl) Read more
-
-
 			if (false)
 				pre
-					code.json.bg-light #{JSON.stringify(addressObj, null, 4)}
-			
-			ul(class='nav nav-tabs mb-3')
-				li(class="nav-item")
-					a(data-toggle="tab", href="#tab-details", class="nav-link active", role="tab") Details
-				li(class="nav-item")
-					a(data-toggle="tab", href="#tab-json", class="nav-link", role="tab") JSON
+					code.json #{JSON.stringify(addressObj, null, 4)}
 
 
-			div(class="tab-content")
-				div(id="tab-details", class="tab-pane active", role="tabpanel")
+			+pageTabs(["Details", "JSON"])
 
-					if (false && config.electrumXServers && config.electrumXServers.length > 0)
+
+			.tab-content
+				+pageTab("Details", true)
+
+					if (payoutAddressForMiner)
+						+funAlert
+							span This looks like a miner payout address for  
+							span.fw-bold #{payoutAddressForMiner.name}
+							if (coinConfig.miningPoolsConfigUrls.length > 1)
+								span  (see the miner-identifications configurations: 
+								each item, index in coinConfig.miningPoolsConfigUrls
+									if (index > 0)
+										span , 
+									a(href=item) config ##{index + 1}
+								span )
+							else
+								span  (see the configuration
+								a(href=coinConfig.miningPoolsConfigUrls[0]) here
+								span )
+								
+
+					else if (global.specialAddresses[address] && global.specialAddresses[address].type == "fun")
+						- var saInfo = global.specialAddresses[address].addressInfo;
+
+						+funAlert(saInfo.alertBodyHtml, saInfo.summary, saInfo.referenceUrl)
+
+
+					.clearfix
+						.float-end
+							if (`${userSettings["addressPageShowTechDetails"]}` == "false")
+								a.btn.btn-primary.btn-sm.me-2(href=`./changeSetting?name=addressPageShowTechDetails&value=true`, title="Display technical details for this address.", data-bs-toggle="tooltip")
+									i.bi-plus-square.me-2
+									| Technical Details
+
+
+					if (false && config.electrumServers && config.electrumServers.length > 0)
 						if (session.hideElectrumTrustWarnings != "true")
-							div(class="alert alert-primary alert-dismissible clearfix shadow-sm", role="alert")
-								span  this explorer is database-free, it doesn't natively support address balances and transaction histories. In order to provide this functionality, address balances and transaction history can be requested from a configurable set of ElectrumX servers. If multiple ElectrumX servers are configured, the results are cross-referenced and conflicts noted. For the transaction history displayed below, only the transaction identifiers from ElectrumX are used; the transaction details are requested via RPC from this app's primary node, as usual.
+							div.alert.alert-primary.alert-dismissible.clearfix.shadow-sm(role="alert")
+								span  this explorer is database-free, it doesn't natively support address balances and transaction histories. In order to provide this functionality, address balances and transaction history can be requested from a configurable set of Electrum servers. If multiple Electrum servers are configured, the results are cross-referenced and conflicts noted. For the transaction history displayed below, only the transaction identifiers from Electrum are used; the transaction details are requested via RPC from this app's primary node, as usual.
 
-								a(href="/changeSetting?name=hideElectrumTrustWarnings&value=true", class="close", aria-label="Close", style="text-decoration: none;")
+								a.close(href="./changeSetting?name=hideElectrumTrustWarnings&value=true", aria-label="Close", style="text-decoration: none;")
 									span(aria-hidden="true") &times;
 
-					div(class="card mb-3 shadow-sm")
-						div(class="card-header")
-							span(class="h6") Summary
+
+					- var x = result.validateaddress;
+					- var flags = [];
+					- if (x.ismine) { flags.push(["Mine", "This address is owned by your node."]); }
+					- if (x.iswatchonly) { flags.push(["Watch-Only"]); }
+
+					- var summaryRowItemCount = ((addressEncoding && addressEncoding != "unknown") ? 1 : 0) + (addressDetails ? ((addressDetails.txCount != null ? 1 : 0) + (addressDetails.balanceSat ? 1 : 0) + (addressDetails.unconfirmedBalanceSat ? 1 : 0) + (addressDetails.totalReceivedSat ? 1 : 0)) : 0) + (flags.length > 0 ? 1 : 0);
+					if (summaryRowItemCount > 0)
+						.clearfix
+							.float-start
+								+sectionTitle("Summary")
+							.float-start
 								if (config.addressApi)
-										small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
-						div(class="card-body")
-							div(class="row")
-								div(class="col-md-6")
+									small.text-muted.border-dotted.ms-2(title=`Some details for this address were queried from ${config.addressApi}` data-bs-toggle="tooltip") Trust Note
+						
+						+contentSection
+							+summaryRow(summaryRowItemCount)
+								if (addressEncoding && addressEncoding != "unknown")
+									+summaryItem("Encoding")
+										| #{addressEncoding}
 
-									if (addressObj.hash)
-										div(class="row")
-											div(class="summary-split-table-label") Hash 160
-											div(class="summary-split-table-content monospace") #{addressObj.hash.toString("hex")}
+								if (addressDetails && addressDetails.txCount != null)
+									+summaryItem("Transactions")
+										| #{addressDetails.txCount.toLocaleString()}
 
-									if (result.validateaddress.scriptPubKey)
-										div(class="row")
-											div(class="summary-split-table-label") Script Public Key
-											div(class="summary-split-table-content monospace") #{result.validateaddress.scriptPubKey}
+								if (addressDetails && addressDetails.balanceSat)
+									+summaryItem("Balance")
+										span(class=(addressDetails.balanceSat > 0 ? "text-success" : false))
+											- var currencyValue = new Decimal(addressDetails.balanceSat).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+											+valueDisplay(currencyValue)
 
-									if (addressObj.hasOwnProperty("version"))
-										div(class="row")
-											div(class="summary-split-table-label") Version
-											div(class="summary-split-table-content monospace") #{addressObj.version}
+								if (addressDetails && addressDetails.unconfirmedBalanceSat)
+									+summaryItem("Unconfirmed Balance")
+										span(class=(addressDetails.unconfirmedBalanceSat > 0 ? "text-success" : "text-danger"))
+											if (addressDetails.unconfirmedBalanceSat > 0)
+												span +
+											else
+												span -
 
-									if (result.validateaddress.hasOwnProperty("witness_version"))
-										div(class="row")
-											div(class="summary-split-table-label") Witness Version
-											div(class="summary-split-table-content monospace") #{result.validateaddress.witness_version}
+											- var currencyValue = new Decimal(Math.abs(addressDetails.unconfirmedBalanceSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+											+valueDisplay(currencyValue)
 
-									if (result.validateaddress.witness_program)
-										div(class="row")
-											div(class="summary-split-table-label") Witness Program
-											div(class="summary-split-table-content monospace") #{result.validateaddress.witness_program}
+								if (addressDetails && addressDetails.totalReceivedSat)
+									+summaryItem("Total Received / Sent")
+										span(class=(addressDetails.totalReceivedSat > 0 ? "text-success" : false))
+											if (addressDetails.totalReceivedSat)
+												span.me-1 +
 
-									if (firstSeenTransaction && firstSeenTransaction.confirmations > 0)
-										div(class="row")
-											div(class="summary-split-table-label") First Seen
-											div(class="summary-split-table-content monospace")
-												if (getblockchaininfo)
-													span Block ##{(getblockchaininfo.blocks - firstSeenTransaction.confirmations).toLocaleString()}
-												else
-													a(href=("/block/" + firstSeenTransaction.blockhash)) #{firstSeenTransaction.blockhash}
+											- var currencyValue = new Decimal(Math.abs(addressDetails.totalReceivedSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+											+valueDisplay(currencyValue)
 
-												br
+										br
+										span(class=(addressDetails.totalSentSat > 0 ? "text-danger" : false))
+											if (addressDetails.totalSentSat > 0)
+												span.me-1 -
 
-												span #{moment.utc(new Date(firstSeenTransaction.time * 1000)).format("Y-MM-DD HH:mm:ss")} utc
-												- var timeAgoTime = firstSeenTransaction.time;
-												include includes/time-ago.pug
-												
-												if (false)
-													pre
-														code.json.bg-light #{JSON.stringify(firstSeenTransaction)}
+											- var currencyValue = new Decimal(Math.abs(addressDetails.totalSentSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+											+valueDisplay(currencyValue)
 
-									if (balance)
-										if (balance.conflictedResults)
-											div(class="row")
-												div(class="summary-split-table-label") Balance
-												div(class="summary-split-table-content monospace")
-													span(class="text-warning") Conflicted ElectrumX Results
+								if (flags.length > 0)
+									+summaryItem("Flags")
+										each flagItem, flagIndex in flags
+											span.badge.bg-primary(class=(flagIndex > 0 ? "ms-1" : false), title=(flagItem.length > 1 ? flagItem[1] : false), data-bs-toggle=(flagItem.length > 1 ? "tooltip" : false)) #{flagItem[0]}
 
-													each item in balance.conflictedResults
-														- var currencyValue = item.confirmed / coinConfig.baseCurrencyUnit.multiplier;
-														include includes/value-display.pug
-														
+					+contentSection("Technical Details", true, "addressPageShowTechDetails")
+						+summaryRow(1 + ((addressObj && addressObj.hash) ? 1 : 0) + ((addressObj && utils.objHasProperty(addressObj, "version")) ? 1 : 0) + (utils.objHasProperty(result.validateaddress, "witness_version") ? 1 : 0) + (result.validateaddress.witness_program ? 1 : 0) + (electrumScripthash ? 1 : 0))
+							
+							if (addressObj && addressObj.hasOwnProperty("version"))
+								+summaryItem("Version")
+									| #{addressObj.version}
 
-										else
-											div(class="row")
-												div(class="summary-split-table-label") Balance
-												div(class="summary-split-table-content monospace")
-													- var currencyValue = balance.result.confirmed / coinConfig.baseCurrencyUnit.multiplier;
-													include includes/value-display.pug
+							if (addressObj && addressObj.hash)
+								+summaryItem("Hash 160")
+									| #{utils.ellipsizeMiddle(addressObj.hash, 12)}
+									+copyTextButton(addressObj.hash)
 
-											if (balance.unconfirmed)
-												div(class="row")
-													div(class="summary-split-table-label") Unconfirmed
-													div(class="summary-split-table-content monospace")
-														- var currencyValue = balance.unconfirmed / coinConfig.baseCurrencyUnit.multiplier;
-														include includes/value-display.pug
+							+summaryItem("Script Pub Key")
+								| #{utils.ellipsizeMiddle(result.validateaddress.scriptPubKey, 12)}
+								+copyTextButton(result.validateaddress.scriptPubKey)
 
-									if (addressDetails && addressDetails.balanceSat)
-										div(class="row")
-											div(class="summary-split-table-label") Balance
-											div(class="summary-split-table-content monospace")
-												- var currencyValue = new Decimal(addressDetails.balanceSat).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
-												include includes/value-display.pug
+							if (utils.objHasProperty(result.validateaddress, "witness_version"))
+								+summaryItem("Witness Version")
+									| #{result.validateaddress.witness_version}
 
-									if (addressDetails && addressDetails.txCount)
-										div(class="row")
-											div(class="summary-split-table-label") Transactions
-											div(class="summary-split-table-content monospace") #{addressDetails.txCount.toLocaleString()}
+							if (result.validateaddress.witness_program)
+								+summaryItem("Witness Program")
+									| #{utils.ellipsizeMiddle(result.validateaddress.witness_program, 12)}
+									+copyTextButton(result.validateaddress.witness_program)
 
-									div(class="row")
-										div(class="summary-split-table-label") QR Code
-										div(class="summary-split-table-content monospace")
-											img(src=addressQrCodeUrl, alt=address, style="border: solid 1px #ccc;")
+							if (electrumScripthash)
+								+summaryItem("Script Hash", "Electrum-lookup script hash")
+									| #{utils.ellipsizeMiddle(electrumScripthash, 12)}
+									+copyTextButton(electrumScripthash)
 
-								div(class="col-md-6")
-									if (electrumScripthash)
-										div(class="row")
-											div(class="summary-split-table-label") Scripthash
-											div(class="summary-split-table-content monospace") #{electrumScripthash}
+					
 
-									- var x = result.validateaddress;
-									- var flagNames = ["Is Valid?", "Is Script?", "Is Witness?", "Is Mine?", "Is Watch-Only?"];
-									- var flags = [x.isvalid, x.isscript, x.iswitness, x.ismine, x.iswatchonly];
+					.clearfix
+						.float-start
+							+sectionTitle(addressDetails && addressDetails.txCount ? `${addressDetails.txCount.toLocaleString()} Transaction${addressDetails.txCount == 1 ? "" : "s"}` : "Transactions")
+						.float-start
+							if (config.addressApi)
+								if (config.addressApi == "electrum" || config.addressApi == "electrumx")
+									small.text-muted.border-dotted.ms-2(title=`The list of transaction IDs for this address was queried from your configured Electrum server(s).` data-bs-toggle="tooltip") Trust Note
+								else
+									small.text-muted.border-dotted.ms-2(title=`The list of transaction IDs for this address was queried from ${config.addressApi}` data-bs-toggle="tooltip") Trust Note
 
-									each flagName, index in flagNames
-										div(class="row")
-											div(class="summary-split-table-label") #{flagName}
-											div(class="summary-split-table-content monospace")
-												if (flags[index])
-													i(class="fas fa-check text-success")
-												else
-													i(class="fas fa-times text-warning")
-
-					if (false)
-						div(class="card mb-3 shadow-sm")
-							div(class="card-header")
-								span(class="h6") Flags
-							div(class="card-body")
-								div(class="table-responsive")
-									table(class="table text-center")
-										thead
-											tr
-												th Is Valid?
-												th Is Script?
-												th Is Witness?
-												th Is Mine?
-												th Is Watch-Only?
-										tbody
-											tr
-												- var x = result.validateaddress;
-												- var flags = [x.isvalid, x.isscript, x.iswitness, x.ismine, x.iswatchonly];
-
-												each flag in flags
-													td
-														if (flag)
-															i(class="fas fa-check text-success")
-														else
-															i(class="fas fa-times text-warning")
-
-					div(class="card mb-3 shadow-sm")
-						div(class="card-header clearfix")
-							div(class="float-left")
-								span(class="h6")
-									if (addressDetails && addressDetails.txCount)
-										if (addressDetails.txCount == 1)
-											span 1 Transaction
-										else
-											span #{addressDetails.txCount.toLocaleString()} Transactions
-									else
-										span Transactions
-
-									if (config.addressApi)
-										if (config.addressApi == "electrumx")
-											small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ElectrumX (using the configured server(s))` data-toggle="tooltip") Trust Note
-										else
-											small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
-										
-
+						.float-end
 							if (!crawlerBot && txids && txids.length > 1 && addressApiSupport.sortDesc && addressApiSupport.sortAsc)
-								div(class="float-right")
-									a(href="#", class="pull-right dropdown-toggle", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+								div.float-end
+									a.pull-right.dropdown-toggle(href="#", data-bs-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
 										if (sort == "desc")
 											span Newest First
 										else
 											span Oldest First
 
-									div(class="dropdown-menu dropdown-menu-right")
-										a(href=("/address/" + address), class="dropdown-item")
+									div.dropdown-menu.dropdown-menu-end
+										a.dropdown-item(href=`./address/${address}`)
 											if (sort == "desc")
-												i(class="fa fa-check") 
+												i.bi-check2 
 											span  Newest First
-										a(href=("/address/" + address + "?sort=asc"), class="dropdown-item")
+										a.dropdown-item(href=`./address/${address}?sort=asc`)
 											if (sort != "desc")
-												i(class="fa fa-check") 
+												i.bi-check2 
 											span  Oldest First
 
 							else if (txids && txids.length > 1 && addressApiSupport.sortDesc && !addressApiSupport.sortAsc)
-								div.float-right
+								div.float-end
 									span.text-muted Newest First
 
-						div(class="card-body")
-							if (conflictedTxidResults)
-								div(class="alert alert-warning", style="padding-bottom: 0;")
-									div(class="float-left", style="width: 55px; height: 50px; font-size: 18px;")
-										i(class="fas fa-exclamation-triangle fa-2x", style="margin-top: 10px;")
-									h4(class="alert-heading h6 font-weight-bold") Trust Warning
-									p
-										span The transaction history for this address was requested from mulitple ElectrumX servers and the results did not match. The results below were obtained only from 
-										span(class="font-weight-bold") #{electrumHistory.server}
+					+contentSection(null, false, null, true, false)
+						if (conflictedTxidResults)
+							div.alert.alert-warning.pb-0
+								div.float-start(style="width: 55px; height: 50px; font-size: 18px;")
+									i.bi-exclamation-triangle(style="margin-top: 10px;")
+								h4.alert-heading.h6.fw-bold Trust Warning
+								p
+									span The transaction history for this address was requested from mulitple Electrum servers and the results did not match. The results below were obtained only from 
+									span.fw-bold #{electrumHistory.server}
 
 
-							if (true)
-								if (addressApiError && addressApiError.error && addressApiError.error.code && addressApiError.error.code == -32600)
-									span Failed to retrieve transaction history from ElectrumX. See 
-									a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
-									span  for more information.
+						if (true)
+							if (addressApiError && addressApiError.error && addressApiError.error.code && addressApiError.error.code == -32600)
+								span Failed to retrieve transaction history from Electrum. See 
+								a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
+								span  for more information.
 
 
-								else if (addressApiError && addressApiError.userText)
+							else if (addressApiError && addressApiError.userText)
+								+contentSection
 									div.text-danger Error: #{addressApiError.userText}
 
-								else if (addressDetailsErrors && addressDetailsErrors.length > 0)
-									each err in addressDetailsErrors
-										if (err.e && err.e.error && err.e.error.message == "history too large")
-											span Failed to retrieve transaction history from ElectrumX. See 
+							else if (addressDetailsErrors && addressDetailsErrors.length > 0)
+								+contentSection
+									each err, errIndex in addressDetailsErrors
+										- let errorMsg = "";
+										if (err.e && err.e.message)
+											- errorMsg = err.e.message;
+											
+										if (errorMsg == "history too large")
+											span Failed to retrieve transaction history from ElectrumX because this address is involved in too many transactions (more than ElectrumX currently supports retrieving). See 
 											a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
 											span  for more information.
 
-										else if (err == "No address API configured")
-											span No address API is configured. See 
-											a(href="https://github.com/janoside/btc-rpc-explorer/blob/master/.env-sample") the example configuration file
-											span  for help setting up an address API if desired.
+										else if (errorMsg == "failed to get confirmed status") 
+											span Failed to retrieve transaction history from Electrum Rust Server (electrs). See&nbsp;
+											a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
+											span  for more information.
+											.mt-2
+												| As a workaround, consider starting electrs with a custom&nbsp;
+												span.font-plaintext --txid-limit
+												span  argument, to support longer transaction histories.
+											
 
-								else if (transactions.length == 0)
+										else if (errorMsg.endsWith("index entries, query may take too long"))
+											span Failed to retrieve transaction history from Electrum Rust Server (electrs). 
+												| Consider starting electrs with a custom 
+												span.font-plaintext --index-lookup-limit
+												span  argument, to support longer transaction histories.
+
+										else if (err == "No address API configured")
+											.mb-2 No address API is configured.
+											.mb-0 See 
+												| <a href="https://github.com/janoside/btc-rpc-explorer/blob/master/.env-sample">the example configuration file</a>
+												|  for help setting up an address API.
+
+										else
+											span.text-danger Error retrieving transaction history (##{errIndex + 1})
+											pre
+												code.json #{JSON.stringify(err, null, 4)}
+
+							else if (!global.txindexAvailable && transactions.length == 0)
+								+contentSection
+									table.table.table-striped
+										each txid, txidIndex in txids
+											tr
+												td.text-end
+													small.text-muted #{(txidIndex + offset + 1).toLocaleString()}
+												td
+													- var blockHeight = addressDetails.blockHeightsByTxid[txid];
+													- var blockHeightParam = blockHeight > 0 ? `@${blockHeight}` : "";
+													a(href=`./tx/${txid}${blockHeightParam}`) #{txid}
+
+							else if (transactions.length == 0)
+								+contentSection
 									span No transactions found
 
-								each tx, txIndex in transactions
-									//pre
-									//	code.json.bg-light #{JSON.stringify(tx, null, 4)}
-									div(class=("xcard bg-light rounded shadow-sm " + ((txIndex < (transactions.length - 1) || txids.length > limit) ? "mb-4" : "")))
-										div(class="card-header monospace clearfix")
-											div(class="float-left", style="margin-right: 0px;")
-												if (sort == "desc")
-													span ##{(addressDetails.txCount - offset - txIndex).toLocaleString()}
-												else
-													span ##{(offset + txIndex + 1).toLocaleString()}
-												span  &ndash;
-
-											div(class="row")
-												div(class="col-md-6")
-													if (tx && tx.txid)
-														a(href=("/tx/" + tx.txid)) #{tx.txid}
-
-														if (global.specialTransactions && global.specialTransactions[tx.txid])
-															span  
-															a(data-toggle="tooltip", title=(coinConfig.name + " Fun! See transaction for details"))
-																i(class="fas fa-certificate text-primary")
-
-												div(class="col-md-6")
-													div(class="text-md-right")
-														if (tx.time)
-															span #{moment.utc(new Date(tx["time"] * 1000)).format("Y-MM-DD HH:mm:ss")} utc
-															- var timeAgoTime = tx.time;
-															include includes/time-ago.pug
-
-														else
-															span(class="text-danger") Unconfirmed
-
-												div(class="col")
-													if (addrGainsByTx[tx.txid])
-														- var currencyValue = addrGainsByTx[tx.txid];
-														span(class="text-success") +
-															include includes/value-display.pug
-
-														if (addrLossesByTx[tx.txid])
-															span  / 
-
-													if (addrLossesByTx[tx.txid])
-														- var currencyValue = addrLossesByTx[tx.txid];
-														span(class="text-danger") -
-															include includes/value-display.pug
-													
-										div(class="card-body")
-											if (true)
-												- var txInputs = txInputsByTransaction[tx.txid];
-												- var blockHeight = blockHeightsByTxid[tx.txid];
-												- var txIOHighlightAddress = address;
-
-												include includes/transaction-io-details.pug
-
 							else
-								p Since this explorer is database-free, it doesn't natively support address transaction history. However, you can configure it to communicate with one or more ElectrumX servers to build and display this data. In doing so, you should be aware that you'll be trusting those ElectrumX servers. If you configure multiple servers the results obtained from each will be cross-referenced against the others. Communicating with ElectrumX servers will also impact your privacy since the servers will know what addresses you're interested in. If these tradeoffs are acceptable, you can see a list of public ElectrumX servers here: 
-								a(href="https://uasf.saltylemon.org/electrum") https://uasf.saltylemon.org/electrum
+								- var txIOHighlightAddress = address;
+								- var options = {currentBlockHeight: getblockchaininfo.blocks, blockHeightsByTxid: blockHeightsByTxid, showDates: true, showConfirmations: true, highlightAddress: address, addrGainsByTxid: addrGainsByTx, addrLossesByTxid: addrLossesByTx, hidePagination:crawlerBot};
+								+txList(transactions, addressDetails.txCount, limit, offset, txInputsByTransaction, options)
+
 							
-							if (false)
-								pre
-									code.json.bg-light #{JSON.stringify(transactions, null, 4)}
-
-							if (!crawlerBot && addressDetails && addressDetails.txCount > limit)
-								- var txCount = addressDetails.txCount;
-								- var pageNumber = offset / limit + 1;
-								- var pageCount = Math.floor(txCount / limit);
-								- if (pageCount * limit < txCount) {
-									- pageCount++;
-								- }
-								- var paginationUrlFunction = function(x) {
-									- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-								- }
-
-								hr.mt-3
-
-								include includes/pagination.pug
-
 							
 				
 
-				div(id="tab-json", class="tab-pane", role="tabpanel")
-					div(class="highlight")
-						h4 validateaddress
+				+pageTab("JSON")
+					+contentSection("validateaddress")
 						pre
-							code(class="json bg-light", data-lang="json") #{JSON.stringify(result.validateaddress, null, 4)}
+							code.json #{JSON.stringify(result.validateaddress, null, 4)}
 
-						if (addressDetails)
-							h4 addressDetails
+					if (addressDetails)
+						+contentSection("addressDetails")
 							pre
-								code.json.bg-light #{JSON.stringify(addressDetails, null, 4)}
+								code.json #{JSON.stringify(addressDetails, null, 4)}
+
+					if (addressObj)
+						+contentSection("addressObj")
+							pre
+								code.json #{JSON.stringify(addressObj, null, 4)}
+									
 
 		

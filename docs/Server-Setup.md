@@ -1,24 +1,67 @@
-### Setup of https://btc-explorer.com on Ubuntu 16.04
+### Setup of https://bitcoinexplorer.org on Ubuntu 20.04
+
+Update and install packages
 
     apt update
     apt upgrade
-    apt install git python-software-properties software-properties-common nginx gcc g++ make
-    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
-    nvm install 10.14.1 ## LTS release of NodeJS as of 2018-11-29, via https://nodejs.org/en/
-    npm install pm2 --global
-    add-apt-repository ppa:certbot/certbot
-    apt update
-    apt upgrade
-    apt install python-certbot-nginx
+    apt install git nginx gcc g++ make python3-certbot-nginx
     
-Copy content from [./btc-explorer.com.conf](./btc-explorer.com.conf) into `/etc/nginx/sites-available/btc-explorer.com.conf`
+Install NVM from https://github.com/nvm-sh/nvm
 
-    certbot --nginx -d btc-explorer.com
-    cd /etc/ssl/certs
-    openssl dhparam -out dhparam.pem 4096
+    nvm ls-remote
+    
+    # install latest node from output of ls-remote above, e.g.:
+    nvm install 15.13.0 
+    
+    npm install -g pm2
+    
+Misc setup
+
+    # add user for btc-related stuff
+    adduser bitcoin # leave everything blank if you want
+    
+    # gen self-signed cert
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/selfsigned.key -out /etc/ssl/certs/selfsigned.crt
+    
+    # get nginx config
+    wget https://raw.githubusercontent.com/janoside/btc-rpc-explorer/master/docs/explorer.btc21.org.conf
+    mv explorer.btc21.org.conf /etc/nginx/sites-available/bitcoinexplorer.org
+
+Get source, npm install
+
     cd /home/bitcoin
     git clone https://github.com/janoside/btc-rpc-explorer.git
     cd /home/bitcoin/btc-rpc-explorer
     npm install
-    npm run build
-    pm2 start bin/www --name "btc-rpc-explorer"
+    
+    # startup via pm2
+    pm2 start bin/www --name "btc"
+    
+    # get letsencrypt cert
+    certbot --nginx -d bitcoinexplorer.org
+    
+Tor setup
+
+    apt install tor
+    
+Edit /etc/tor/torrc
+
+1. Uncomment `ControlPort 9051`
+2. Uncomment `CookieAuthentication 1`
+3. If applicable, add Torv3 Hidden service credentials to `/var/lib/tor/btcexp...onion`
+    * chmod 700 for directory, owned by the same "tor" user as other files in that dir
+    * chmod 600 for the files in the "btcexp...onion" dir)
+5. Add `HiddenServiceDir /var/lib/tor/btcexp...onion/`
+6. Add `HiddenServicePort 80 127.0.0.1:3000`
+
+
+Tor startup
+
+    service tor start
+    
+    # verify tor startup
+    ps -ef | grep tor
+    
+    # verify tor listening on 9050 (proxy) and 9051 (control port)
+    netstat -nlp | grep 905
+    
